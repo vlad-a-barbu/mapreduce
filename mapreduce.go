@@ -83,11 +83,12 @@ func ReadWords(words []string, c chan<- string) {
 	close(c)
 }
 
-func GetResult(inp []<-chan float64) float64 {
+func GetResult(inp []<-chan float64) (float64, float64) {
 	var wg sync.WaitGroup
 	wg.Add(len(inp))
 
-	var res float64
+	var acc float64
+	var rej float64
 
 	for i := 0; i < len(inp); i++ {
 		go func(cnt int, ch <-chan float64) {
@@ -97,10 +98,10 @@ func GetResult(inp []<-chan float64) float64 {
 			switch state {
 			case Accepted:
 				log.Println("Acceptance mean: ", val)
-				res = val
+				acc = val
 			case Rejected:
 				log.Println("Rejection mean: ", val)
-				break
+				rej = val
 			}
 
 			wg.Done()
@@ -109,10 +110,10 @@ func GetResult(inp []<-chan float64) float64 {
 
 	wg.Wait()
 
-	return res
+	return acc, rej
 }
 
-func MapReduce(input [][]string, filter func(string) bool) float64 {
+func MapReduce(input [][]string, filter func(string) bool) (acc float64, rej float64) {
 	smaps := []<-chan map[Selection]int{}
 
 	for _, inp := range input {
